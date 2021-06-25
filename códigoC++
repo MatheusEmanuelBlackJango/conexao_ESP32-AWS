@@ -1,0 +1,179 @@
+#include <pgmspace.h>
+#include <stdlib.h>  // necessário p/ as funções rand() e srand()
+#include<time.h> // necessária para função time
+
+#define SECRET
+#define THINGNAME "teste2"                                       //change this
+
+const char WIFI_SSID[] = "3A BEBIDAS";                                        //change this
+const char WIFI_PASSWORD[] = "Pirulitoquebatebate";                                    //change this
+const char AWS_IOT_ENDPOINT[] = "a35uciom4jmkj-ats.iot.us-east-2.amazonaws.com";        //change this
+
+// Amazon Root CA 1
+static const char AWS_CERT_CA[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+U5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs
+N+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv
+o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
+5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
+rqXRfboQnoZsG4q5WTP468SQvvG5
+-----END CERTIFICATE-----
+)EOF";
+
+// Device Certificate                                               //change this
+static const char AWS_CERT_CRT[] PROGMEM = R"KEY(
+-----BEGIN CERTIFICATE-----
+MIIDWTCCAkGgAwIBAgIUS2Uqi9653C4eSTvY5QsTwitmtogwDQYJKoZIhvcNAQEL
+BQAwTTFLMEkGA1UECwxCQW1hem9uIFdlYiBTZXJ2aWNlcyBPPUFtYXpvbi5jb20g
+SW5jLiBMPVNlYXR0bGUgU1Q9V2FzaGluZ3RvbiBDPVVTMB4XDTIxMDQxNjE1MTIz
+OVoXDTQ5MTIzMTIzNTk1OVowHjEcMBoGA1UEAwwTQVdTIElvVCBDZXJ0aWZpY2F0
+ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAND5BhjcEj+dRQ6tPhKv
+dgRfdiS8+ekASc2EtnvjMCjF6FNlSebF5qFKxM49Cs695Q87ng0G3PZrNQoYfBjX
+1ClxBbTWPwje9cbAXr5ify7IOKbKVGujzEHPEXD90zTb+Seod6WfutAv8e8V8ICe
+Zs4jEPUOn/ky5YSm2YO8zumNn5iVcZdBaL5/0w5WFdYJt5LF35ADh2cm0yweLOB/
+wBBBjhPbU49PXTBjQyUwLfOQNbK6hmNld65zPg/O11DH72IUQalIDyJ69wM5kM8k
+6aHH5VEHizlXXvDAkpQQcO1SDeTvSrqHkRCEOXxplBV+W95CSe9YmDHTb9YEz7ty
+B2UCAwEAAaNgMF4wHwYDVR0jBBgwFoAUwbWBiWcoZ/h69WNsbKy0FT9U1IAwHQYD
+VR0OBBYEFKOzVASlfoHK5kKRgfKbeIR3jJ/aMAwGA1UdEwEB/wQCMAAwDgYDVR0P
+AQH/BAQDAgeAMA0GCSqGSIb3DQEBCwUAA4IBAQARhmgK+FNB/ker5YDqKcqOI+pz
+MDPeSNrFx/7BPppKgLSrJ2j2xB9dnpfh1DtAKRpa13fH8NkYjjqRNc/nn1w44sfm
+3kTayL6E6E/QmEhgbRGLlKNs/6HUAvs25jJ/jNSOwIFaTAjJqNcN76Rp/LJp303j
+EAhCSNoi7Pc9Zcf2yl7x4KWtykZHlXL1DmvJEUplf/2XYaZ5A4teHLm8xQ7Rba44
+fUj8olWG3OS/yQ7ezxMX//KavXqj8qSM2gmCUH7bslQmpptUHPOohja8S+L/Pf6B
+fVTcOJh7FmNZ8N4ZU07/uy8FLdEogy65v2ZeGHzkbTbLDzCa7yvWYhydSR3K
+-----END CERTIFICATE-----
+
+)KEY";
+
+// Device Private Key                                               //change this
+static const char AWS_CERT_PRIVATE[] PROGMEM = R"KEY(
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpQIBAAKCAQEA0PkGGNwSP51FDq0+Eq92BF92JLz56QBJzYS2e+MwKMXoU2VJ
+5sXmoUrEzj0Kzr3lDzueDQbc9ms1Chh8GNfUKXEFtNY/CN71xsBevmJ/Lsg4pspU
+a6PMQc8RcP3TNNv5J6h3pZ+60C/x7xXwgJ5mziMQ9Q6f+TLlhKbZg7zO6Y2fmJVx
+l0Fovn/TDlYV1gm3ksXfkAOHZybTLB4s4H/AEEGOE9tTj09dMGNDJTAt85A1srqG
+Y2V3rnM+D87XUMfvYhRBqUgPInr3AzmQzyTpocflUQeLOVde8MCSlBBw7VIN5O9K
+uoeREIQ5fGmUFX5b3kJJ71iYMdNv1gTPu3IHZQIDAQABAoIBAQCNii3UBrMhfT85
+6qNhepB/87yMs6a9Z2GVny8OiFmlNC7g1XkRordMRd05J2U7lKkiASpS/nQJP6Hk
+HaNoHD9qdk/8JST6uDFWFhPV9dbY8+pTJjW51m7RoBPbKUC1y8xdTSEFAERDIEZI
+vt5v71oIgv3ITciSvCNzDqPDM84dp4H2R1OzoqbRfF2Ozj68q4eqEmy9zITBdtvJ
+WXm6u2Qi7Ta56tYWI3o1P1qA5TIbPGY+gkiaF6ggQ2zL4jX+5TSdD2IJ5R5IyEIr
+3Tu0Kx5YlwyYf+WqkoXqVw1iLyiSlblTgKDmxCxAdUXEC/l0mg8dY3S7dLE4yjcc
+clMI4SQ9AoGBAPhNHGiuOYPyLR9+Ib89w+jng9xZkuM1HT63lKc17T2GYfCv/d43
+cemahkXNBupm8CAXSy6l1l/n16QlwQfYgWamKZVq6w6t0g+tL3mt8tooWqO8k+KY
+3f5296DaJ+WRJei5OpWTXnNj9nZkBLMSiVNLLB0FkRSwNwejqCpvXzPvAoGBANdz
+vlJuQbr2TSitPk/4AyjgPw+SCfKQ4w24h+miNwaSJbv+75ifDVKvZar1ZNm697Pe
+/SJkSXzChX7HILXRFVk6Zx9fXL3AvkV5KkGpEN9/q52jcZNmn0+G15DQGmoqYe45
+sQyElrcv9keYQRcyYLnYEJMmFZ7kVM7QeoLfIVXrAoGAfiQ+gHeyRHPttIgRgORR
++KpU9MaUttSu7MO6w0/EHHN+ohXmdNPaDQExoZhNIRv2dXcf/KzHQaW4iW2cqO22
+n31etsfAbo6jns8uxTQ3odjKY1BUGNPsQ3AQ0SjDB/87MQWY25AodZqdBPw+3vJV
+zXjtCjlfwRDchAcCUbyOswUCgYEAviot4Wnp4FCHOBD5f/IDL/AGGQMofo39ql2m
+sMN51/XlEnLpHYe9Za7kiKnB0x/ghEWcnd9wsYqr84NkzrX2JuSSorE0FVPrXTyd
+3IiSGQMCAciCdbzNfo8g83OK7QvtliwbplXdBWFy+ixbv1K65y3bK1YhHTah2E1Q
+5PR24vMCgYEA7xYCWlyE0McMq/f3GF4tAZW/7atuSM8m3jZsuoQHOIuzTiB/cqQP
+HXcv0SVcQd4zdOm5KK5J1DiBkXSH0XmwIjMkRNjH0wuakl7xUO4VHotDlB4wIW1U
+v6lRkW8z+EOVDyhGbPNYTitERGCy7Z9ZJr6/x8rPLNfQ6LPdOjiIvvk=
+-----END RSA PRIVATE KEY-----
+
+)KEY";
+
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include "WiFi.h"
+
+
+#define AWS_IOT_PUBLISH_TOPIC   "esp32/pub"
+#define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
+
+WiFiClientSecure net = WiFiClientSecure();
+PubSubClient client(net);
+
+void connectAWS()
+{
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  Serial.println("Connecting to Wi-Fi");
+
+  while (WiFi.status() != WL_CONNECTED){
+    delay(500);
+    Serial.print(".");
+  }
+
+  // Configure WiFiClientSecure to use the AWS IoT device credentials
+  net.setCACert(AWS_CERT_CA);
+  net.setCertificate(AWS_CERT_CRT);
+  net.setPrivateKey(AWS_CERT_PRIVATE);
+
+  // Connect to the MQTT broker on the AWS endpoint we defined earlier
+  client.setServer(AWS_IOT_ENDPOINT, 8883);
+
+  // Create a message handler
+  client.setCallback(messageHandler);
+
+  Serial.print("Connecting to AWS IOT");
+
+  while (!client.connect(THINGNAME)) {
+    Serial.print(".");
+    delay(100);
+  }
+
+  if(!client.connected()){
+    Serial.println("AWS IoT Timeout!");
+    return;
+  }
+
+  // Subscribe to a topic
+  client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
+
+  Serial.println("AWS IoT Connected!");
+}
+
+void publishMessage()
+{
+  StaticJsonDocument<200> doc;
+  //doc["time"] = millis();
+  int i;
+  char jsonBuffer[512];
+  srand(time(NULL)); // função para os numeros aleatórios serem diferentes
+  doc = rand() % 100; // gerando numero aleatorio e adicionando ao documento json
+  for (i=0; i < 1; i++) {
+  serializeJson(doc, jsonBuffer); // print to client     // laço for definindo parametros do rand e imprimindo os numeros aleatorios
+  }
+  client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
+}
+
+void messageHandler(char* topic, byte* payload, unsigned int length) {
+  Serial.print("incoming: ");
+  Serial.println(topic);
+
+  StaticJsonDocument<200> doc;
+  deserializeJson(doc, payload);
+  const char* message = doc["message"];
+  Serial.println(message);
+}
+
+void setup() {
+  Serial.begin(9600);
+  connectAWS();
+}
+
+void loop() {
+  publishMessage(); // publicando mensagem com numeros aleatorios em loop
+  client.loop();
+  delay(1000);
+}
