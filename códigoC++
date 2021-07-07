@@ -1,13 +1,14 @@
 #include <pgmspace.h>
+#include <stdio.h> // necessaria para o printf
 #include <stdlib.h>  // necessário p/ as funções rand() e srand()
 #include<time.h> // necessária para função time
 
 #define SECRET
-#define THINGNAME "teste2"                                       //change this
+#define THINGNAME "esp32-thing"                                       //change this
 
 const char WIFI_SSID[] = "3A BEBIDAS";                                        //change this
 const char WIFI_PASSWORD[] = "Pirulitoquebatebate";                                    //change this
-const char AWS_IOT_ENDPOINT[] = "a35uciom4jmkj-ats.iot.us-east-2.amazonaws.com";        //change this
+const char AWS_IOT_ENDPOINT[] = "a35uciom4jmkj-ats.iot.us-east-1.amazonaws.com";        //change this
 
 // Amazon Root CA 1
 static const char AWS_CERT_CA[] PROGMEM = R"EOF(
@@ -36,24 +37,24 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 // Device Certificate                                               //change this
 static const char AWS_CERT_CRT[] PROGMEM = R"KEY(
 -----BEGIN CERTIFICATE-----
-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
+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
-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
+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
 -----END CERTIFICATE-----
 
 )KEY";
@@ -61,31 +62,31 @@ fVTcOJh7FmNZ8N4ZU07/uy8FLdEogy65v2ZeGHzkbTbLDzCa7yvWYhydSR3K
 // Device Private Key                                               //change this
 static const char AWS_CERT_PRIVATE[] PROGMEM = R"KEY(
 -----BEGIN RSA PRIVATE KEY-----
-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
+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
 -----END RSA PRIVATE KEY-----
 
 )KEY";
@@ -146,16 +147,35 @@ void connectAWS()
 void publishMessage()
 {
   StaticJsonDocument<200> doc;
-  //doc["time"] = millis();
-  int i;
+  int i, x;
   char jsonBuffer[512];
   srand(time(NULL)); // função para os numeros aleatórios serem diferentes
-  doc = rand() % 100; // gerando numero aleatorio e adicionando ao documento json
+  doc[x] = rand() % 10; // gerando numero aleatorio e adicionando ao documento json
   for (i=0; i < 1; i++) {
   serializeJson(doc, jsonBuffer); // print to client     // laço for definindo parametros do rand e imprimindo os numeros aleatorios
   }
   client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
 }
+
+
+//void publishMessage()
+//{
+//  
+//  int x[] ={43, 43, 54};
+// // doc["chave aleatoria"] = "texto aleatorio";
+//  Serial.println(x);
+//  client.publish(AWS_IOT_PUBLISH_TOPIC);
+//  }
+
+//void publishMessage()
+//{
+//  StaticJsonDocument<200> doc;
+//  doc["time"] = millis();
+//  char jsonBuffer[512];
+//  serializeJson(doc, jsonBuffer); // print to client
+//
+//  client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
+//}
 
 void messageHandler(char* topic, byte* payload, unsigned int length) {
   Serial.print("incoming: ");
@@ -173,7 +193,8 @@ void setup() {
 }
 
 void loop() {
-  publishMessage(); // publicando mensagem com numeros aleatorios em loop
+//  publishMessage2();
+  publishMessage();
   client.loop();
   delay(1000);
 }
